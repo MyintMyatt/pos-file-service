@@ -1,12 +1,22 @@
-# --- Stage 1: Build Stage (Debian-based for better compatibility) ---
-FROM gradle:8-jdk21 AS builder
+FROM gradle:8.5-jdk21 as build
 WORKDIR /app
-COPY . .
-RUN gradle bootJar --no-daemon
 
-# --- Stage 2: Runtime Stage (Keep Alpine for small size) ---
-FROM eclipse-temurin:21-jre-alpine
+COPY build.gradle settings.gradle gradlew /app/
+COPY gradle /app/gradle
+
+COPY src /app/src
+
+RUN chmod +x ./gradlew
+
+RUN --mount=type=cache,target=/home/gradle/.gradle \
+    ./gradlew build -x test --no-daemon
+
+FROM openjdk:21-jdk-slim
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+
+COPY --from=build /app/build/libs/*.jar app.jar
+
 EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
+

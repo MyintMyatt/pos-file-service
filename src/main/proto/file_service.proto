@@ -4,9 +4,16 @@ option java_multiple_files = true;
 option java_package = "orion.grpc.file_service";
 option java_outer_classname = "FileServiceProto";
 
+
+message MetaData{
+    string filename = 1;
+    string filetype = 2;
+    double filesize = 3;
+}
+
 message UploadRequest{
     oneof fileDate{
-        string filename = 1;
+        MetaData metadata = 1;
         bytes chunk = 2;
     }
 }
