@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: pos-file-service
+
+  profiles:
+    active: dev
+
+  #grpc
+  grpc:
+    server:
+      port: 9091
