@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "orion.grpc.file_service";
+option java_outer_classname = "FileServiceProto";
+
+message UploadRequest{
+    oneof fileDate{
+        string filename = 1;
+        bytes chunk = 2;
+    }
+}
+
+message UploadResponse{
+    string file_id = 1;
+    int32 status = 2;
+    string message = 3;
+}
+
+service FileService{
+    rpc UploadFile(stream UploadRequest) returns (UploadResponse);
+}
+

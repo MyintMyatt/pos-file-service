@@ -9,3 +9,9 @@ spring:
   grpc:
     server:
       port: 9091
+
+
+
+
+storage:
+  path: ./storage
