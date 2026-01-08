@@ -4,6 +4,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.grpc.server.service.GrpcService;
 import orion.grpc.file_service.FileServiceGrpc;
@@ -24,13 +25,20 @@ public class GrpcFileService extends FileServiceGrpc.FileServiceImplBase {
     @Value("${storage.path}")
     private String storagePath;
 
+    @Autowired
+    private FileMetadataService fileMetadataService;
+
     @Override
     public StreamObserver<UploadRequest> uploadFile(StreamObserver<UploadResponse> responseObserver) {
         return new StreamObserver<UploadRequest>() {
             private OutputStream writer;
             private String fileId;
             private String fileName;
+            private String fileType;
+            private long fileSize;
             private Path targetFile;
+            private String ownerService;
+            private String ownerId;
 
             @Override
             public void onNext(UploadRequest request) {
@@ -41,6 +49,10 @@ public class GrpcFileService extends FileServiceGrpc.FileServiceImplBase {
 
                         fileId = UUID.randomUUID().toString();
                         fileName = request.getMetadata().getFilename();
+                        fileType = request.getMetadata().getFiletype();
+                        fileSize = (long) request.getMetadata().getFilesize();
+                        ownerService = request.getMetadata().getOwnerService();
+                        ownerId = request.getMetadata().getOwnerId();
                         targetFile = Path.of(storagePath, fileId + "_" + fileName);
                         Files.createDirectories(targetFile.getParent());
                         writer = Files.newOutputStream(
@@ -89,6 +101,10 @@ public class GrpcFileService extends FileServiceGrpc.FileServiceImplBase {
                 );
                 log.info("successfully uploaded file. file id => " + fileId);
                 responseObserver.onCompleted();
+
+
+                log.info("saving file metadata to database.......");
+                fileMetadataService.saveFileMetadata(fileId, fileName, fileType, fileSize, targetFile, ownerService, ownerId );
 
             }
 

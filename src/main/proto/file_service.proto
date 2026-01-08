@@ -9,6 +9,8 @@ message MetaData{
     string filename = 1;
     string filetype = 2;
     double filesize = 3;
+    string ownerService = 4;
+    string ownerId = 5;
 }
 
 message UploadRequest{
