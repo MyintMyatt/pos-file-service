@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -35,6 +36,7 @@ public class FileMetadataService {
         log.info("successfully saved file metadata in db");
     }
 
+    @Transactional(readOnly = true)
     public String getFilePathById(String fileId) {
         com.orion.pos_file_service.entity.FileMetadata metadata = fileMetadataRepo.getReferenceById(fileId);
         return metadata.getStoragePath();
