@@ -34,4 +34,9 @@ public class FileMetadataService {
         fileMetadataRepo.save(fileMetadata);
         log.info("successfully saved file metadata in db");
     }
+
+    public String getFilePathById(String fileId) {
+        com.orion.pos_file_service.entity.FileMetadata metadata = fileMetadataRepo.getReferenceById(fileId);
+        return metadata.getStoragePath();
+    }
 }

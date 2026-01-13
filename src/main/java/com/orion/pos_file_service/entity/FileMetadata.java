@@ -13,6 +13,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "tbl_file_meta_data")
 @Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class FileMetadata {

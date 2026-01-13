@@ -1,5 +1,7 @@
 package com.orion.pos_file_service.service;
 
+import com.google.protobuf.ByteString;
+import com.orion.pos_file_service.entity.FileMetadata;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
@@ -7,10 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.grpc.server.service.GrpcService;
-import orion.grpc.file_service.FileServiceGrpc;
-import orion.grpc.file_service.UploadRequest;
-import orion.grpc.file_service.UploadResponse;
+import orion.grpc.file_service.*;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -104,13 +106,14 @@ public class GrpcFileService extends FileServiceGrpc.FileServiceImplBase {
 
 
                 log.info("saving file metadata to database.......");
-                fileMetadataService.saveFileMetadata(fileId, fileName, fileType, fileSize, targetFile, ownerService, ownerId );
+                fileMetadataService.saveFileMetadata(fileId, fileName, fileType, fileSize, targetFile, ownerService, ownerId);
 
             }
 
             private void cleanup() {
-                try{
-                    if (writer != null) writer.close();;
+                try {
+                    if (writer != null) writer.close();
+                    ;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -118,6 +121,36 @@ public class GrpcFileService extends FileServiceGrpc.FileServiceImplBase {
         };
     }
 
+    @Override
+    public void downloadFile(DownloadRequest request, StreamObserver<DownloadResponse> responseObserver) {
+        String fileId = request.getFileId();
 
+        try {
+            String filePath = fileMetadataService.getFilePathById(fileId);
+            log.info("file path {} find by file id {}", filePath, fileId);
+            Path path = Path.of(filePath);
 
+            try (InputStream in = Files.newInputStream(path)) {
+                byte[] buffer = new byte[64 * 1024];
+                int bytesRead;
+
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    responseObserver.onNext(
+                            DownloadResponse.newBuilder()
+                                    .setChunk(ByteString.copyFrom(buffer, 0, bytesRead))
+                                    .build()
+                    );
+                }
+            }
+
+            responseObserver.onCompleted();
+        } catch (IOException e) {
+            log.warn("error : {}", e.getMessage());
+            responseObserver.onError(
+                    Status.NOT_FOUND
+                            .withDescription(e.getMessage())
+                            .asRuntimeException());
+            throw new RuntimeException(e);
+        }
+    }
 }
